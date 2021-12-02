@@ -3,51 +3,69 @@
  */
 package src
 
+
+fun main() {
+    val input = generateSequence(::readLine).toList()
+
+    // p1
+    val sub = SubmarineWithAim(AutoPilotMovement())
+    readInputAndFormat(input).forEach { sub.move(it) }
+    println("The product of the position is: ${sub.position.depth * sub.position.horizontal}")
+
+    // p2
+    val sub2 = SubmarineWithAim(ManualPilotMovement())
+    readInputAndFormat(input).forEach { sub2.move(it) }
+    println("The product of the complex position is: ${sub2.position.depth * sub2.position.horizontal}")
+}
+
+//***********************************************************************************
+// Domain Classes
+//***********************************************************************************
 enum class Direction {
     FORWARD,
     UP,
     DOWN
 }
 
-fun main() {
-    val input = generateSequence(::readLine).toList()
-
-    // p1
-    val sub = Submarine()
-    readInputAndFormat(input).forEach { sub.move(it) }
-    println("The product of the position is: ${sub.depth * sub.horizontalPos}")
-
-    // p2
-    val sub2 = SubmarineWithAim()
-    readInputAndFormat(input).forEach { sub2.move(it) }
-    println("The product of the complex position is: ${sub2.depth * sub2.horizontalPos}")
-}
-
 data class Movement(val direction: Direction, val value: Int)
+data class Position(val horizontal: Int, val depth: Int, val aim: Int)
 
-class Submarine(var horizontalPos: Int = 0, var depth: Int = 0) {
-    fun move(movement: Movement) {
-        when (movement.direction) {
-            Direction.FORWARD -> horizontalPos += movement.value
-            Direction.DOWN -> depth += movement.value
-            Direction.UP -> depth -= movement.value
+abstract class MovementRules {
+    abstract fun move(movement: Movement, current: Position): Position
+}
+class AutoPilotMovement: MovementRules() {
+    override fun move(movement: Movement, current: Position): Position {
+        return when (movement.direction) {
+            Direction.FORWARD -> current.copy(horizontal = current.horizontal + movement.value)
+            Direction.DOWN -> current.copy(depth = current.depth + movement.value)
+            Direction.UP -> current.copy(depth = current.depth - movement.value)
         }
     }
 }
-
-class SubmarineWithAim(var horizontalPos: Int = 0, var depth: Int = 0, var aim: Int = 0) {
-    fun move(movement: Movement) {
-        when (movement.direction) {
+class ManualPilotMovement: MovementRules() {
+    override fun move(movement: Movement, current: Position): Position {
+         return when (movement.direction) {
             Direction.FORWARD -> {
-                horizontalPos += movement.value
-                depth += movement.value * aim
+                current.copy(
+                    horizontal = current.horizontal + movement.value,
+                    depth = current.depth + (movement.value * current.aim)
+                )
             }
-            Direction.DOWN -> aim += movement.value
-            Direction.UP -> aim -= movement.value
+            Direction.DOWN -> current.copy(aim = current.aim + movement.value)
+            Direction.UP -> current.copy(aim = current.aim - movement.value)
         }
     }
 }
 
+class SubmarineWithAim(val movementRules: MovementRules, var position: Position = Position(0, 0, 0)) {
+    fun move(movement: Movement) {
+        this.position = movementRules.move(movement, position)
+    }
+}
+
+//***********************************************************************************
+// Helpers
+//***********************************************************************************
 fun readInputAndFormat(input: List<String>): List<Movement> {
     val pattern = """(\w+) (\d+)""".toRegex()
     return input.map {
