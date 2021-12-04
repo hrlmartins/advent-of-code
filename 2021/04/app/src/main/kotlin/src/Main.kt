@@ -26,21 +26,15 @@ fun solveP1(boards: List<BingoBoard>, drawList: List<Int>) {
 }
 
 fun solveP2(boards: List<BingoBoard>, drawList: List<Int>) {
-    var prizedBoards = 0
     for (number in drawList) {
         for (board in boards) {
             board.mark(number)
             if (!board.prized && board.isPrizedBoard()) {
                 board.prized = true
-                prizedBoards++
-                if (prizedBoards == boards.size) {
-                    println("P2 - Sum of unmarked multiply by last number drawn: ${number * board.sumUnmarked()}")
-                    return
-                }
+                println("P2 - Sum of unmarked multiply by last number drawn: ${number * board.sumUnmarked()}")
             }
         }
     }
-
 }
 
 fun readBoards(boards: List<String>): List<BingoBoard> {
@@ -62,6 +56,11 @@ fun readRawBoard(rawBoard: List<String>): BingoBoard {
 }
 
 data class BingoNumber(val number: Int, var marked: Boolean = false)
+
+// The functions to understand the winning situation to find a number and all that are all in dumb form
+// and thus do unnecessary n^2 scans repeatedly. This could be counter-acted keeping more state like the position
+// of a given number if it exists directly on a map. More things could be done here like that but this works for 5x5
+// boards :D
 class BingoBoard(val board: Array<Array<BingoNumber>> = arrayOf(), var prized: Boolean = false) {
     fun mark(num: Int) {
         val (row, column) = findPos(num)
