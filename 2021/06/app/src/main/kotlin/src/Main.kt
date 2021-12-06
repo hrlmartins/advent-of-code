@@ -4,42 +4,34 @@ fun main() {
     val input = generateSequence(::readLine).toList()
     val allFish = input.flatMap { it.split(",") }.map { LanternFish(it.toInt()) }
 
-    val trackFish = mutableMapOf<Int, Long>()
-    (0..8).forEach { trackFish[it] = 0 }
-    allFish.forEach { trackFish[it.internalClock] = trackFish[it.internalClock]!! + 1 }
+    val trackFish = LongArray(9) { idx -> allFish.count { it.internalClock == idx }.toLong() }
     println("Number of fish P1: ${solve(trackFish, 0, 80)}")
-
-    (0..8).forEach { trackFish[it] = 0 }
-    allFish.forEach { trackFish[it.internalClock] = trackFish[it.internalClock]!! + 1 }
     println("Number of fish P2: ${solve(trackFish, 0, 256)}")
 
 }
 
-fun solve(trackFish: MutableMap<Int, Long>, currentSimDay: Int, totalSimDays: Int): Long {
+fun solve(trackFish: LongArray, currentSimDay: Int, totalSimDays: Int): Long {
     if (currentSimDay == totalSimDays) {
-        return trackFish.values.sum()
+        return trackFish.sum()
     }
 
-    // let's save the fishes with 1 day first so we can update the 0 counter later
-    val currentDay1Fishes = trackFish[1]!!
-    // 1 and 7 will inherit the previous fishes with higher days left (we are passing a day so who had 7 days now has 6 for instance)
-    (1..7).forEach {
-        trackFish[it] = trackFish[it + 1]!!
+    // Creating ne map to be easier to use old values and generate the new map with the new values without shenanigans
+    val newTracker = LongArray(9) { 0 }
+
+    // instead of the fish we just keep track of the number of fishes that have N days left to hatch a new fish
+    // And update according to the rules:
+    // We are processing a new day so every fish that had 5 days... now has 4 and so on and so forth
+    // Just take into consideration the fishes that are zeroed that generate new fishes and reset themselves to 6
+    for (day in 0..8) {
+        if (day == 0) {
+            newTracker[6] += trackFish[0]
+            newTracker[8] += trackFish[0]
+        } else {
+            newTracker[day - 1] += trackFish[day]
+        }
     }
 
-    if (trackFish[0]!! > 0) {
-        // if we have fish with 0 days this will mean we will have a N amount of new fishes with 8 days.
-        // Addittionally it will also reset all the 0 fishes into 6 days. So we add to the existing 6
-        trackFish[8] = trackFish[0]!!
-        trackFish[6] = trackFish[6]!! + trackFish[0]!!
-    }
-
-    //let's pass the day for the new fishies... which will be the same number as the current fishes with 0 days :D
-    trackFish[8] = trackFish[0]!!
-    //Now we can set the 0 day fishes
-    trackFish[0] = currentDay1Fishes
-
-    return solve(trackFish, currentSimDay + 1, totalSimDays)
+    return solve(newTracker, currentSimDay + 1, totalSimDays)
 }
 
 data class LanternFish(var internalClock: Int = 8) // not even necessary but yeh :D
