@@ -2,7 +2,6 @@ package src
 
 import java.util.*
 
-// Each
 fun main() {
     val input = generateSequence(::readLine).toList()
     val octopuses =
@@ -49,6 +48,7 @@ fun solveP2(octupuses: List<List<DumbOctopus>>) {
             }
         }
 
+//        printOctuposes(octupuses)
         if (areAllFlashing(octupuses)) {
             println("P2 - the step that everyone is flashing is ${step + 1}")
             return
