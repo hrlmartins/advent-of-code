@@ -37,7 +37,7 @@ private fun printCode(paper: Set<Point>) {
     for (y in 0..maxY) {
         for (x in 0..maxX) {
             if (paper.contains(Point(x, y))) {
-                print("#")
+                print("\u001b[1;35m#\u001B[0m")
             } else {
                 print(".")
             }
