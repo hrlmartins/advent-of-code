@@ -61,7 +61,7 @@ fun findMatchingRotation(scanner: Scanner, knownBeacons: Set<Beacon>): Pair<List
                     }
                 }
         }
-    } ?: Pair(emptyList(), Beacon(0, 0 ,0))
+    } ?: Pair(emptyList(), Beacon(0, 0, 0))
 }
 
 // Poll time: What do you think itś most readable. The one above or this part in comment? :P
