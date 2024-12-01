@@ -34,9 +34,9 @@ def part1(data: list[str]) -> Any:
 def part2(data: list[str]) -> Any:
     first_set, second_set = process_input(data)
     frequency = Counter(second_set)
-    frequency_score = [num * frequency[num] for num in first_set]
+    similarity_score = [num * frequency[num] for num in first_set]
 
-    return sum(frequency_score)
+    return sum(similarity_score)
 
 
 def main() -> None:
