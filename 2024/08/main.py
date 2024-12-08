@@ -42,23 +42,12 @@ def calculate_antinodes(a_map, antena_pos, part2=False):
                     # We just keep going... so the plan is to iterate in excess
                     # as its easier to use that value and then filter out the ones
                     # that are out of bounds
-                    neg_offset_pos = (fa_row - diff_row, fa_col - diff_col)
-                    pos_offset_pos = (sa_row + diff_row, sa_col + diff_col)
-                    for _ in range(len(a_map) + len(a_map[0])):
+                    for step in range(len(a_map) + len(a_map[0])):
+                        neg_offset_pos = (fa_row - step * diff_row, fa_col - step * diff_col)
+                        pos_offset_pos = (sa_row + step * diff_row, sa_col + step * diff_col)
                         antinodes += [neg_offset_pos, pos_offset_pos]
-                        neg_offset_pos = (
-                            neg_offset_pos[0] - diff_row,
-                            neg_offset_pos[1] - diff_col,
-                        )
-                        pos_offset_pos = (
-                            pos_offset_pos[0] + diff_row,
-                            pos_offset_pos[1] + diff_col,
-                        )
                 else:
-                    antinodes += [
-                        (fa_row - diff_row, fa_col - diff_col),
-                        (sa_row + diff_row, sa_col + diff_col),
-                    ]
+                    antinodes += [(fa_row - diff_row, fa_col - diff_col),(sa_row + diff_row, sa_col + diff_col)]
 
                 antinode_pos |= set(
                     list(filter(lambda x: is_within_range(a_map, x), antinodes))
