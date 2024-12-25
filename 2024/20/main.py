@@ -1,7 +1,6 @@
 import sys
 from collections import deque
 from typing import Any
-import itertools
 
 
 def parse_input(input_data: str) -> list[str]:
@@ -36,13 +35,13 @@ def move_tuple(t, dir):
 
 
 def find_path(grid, pos, end_pos):
-    to_visit = deque([(0, pos)])
+    to_visit = deque([(0, pos, [pos])])
     visited = set()
 
     while to_visit:
         node = to_visit.popleft()
         if node[1] == end_pos:
-            return node[0]
+            return (node[0], node[2])
         if node[1] in visited:
             continue
 
@@ -50,62 +49,54 @@ def find_path(grid, pos, end_pos):
         for dir in directions():
             new_pos = move_tuple(node[1], dir)
             if is_in_bounds(grid, new_pos):
-                to_visit.append((node[0] + 1, new_pos))
+                to_visit.append((node[0] + 1, new_pos, node[2] + [new_pos]))
 
-    return -1
+    return (-1, [])
+
+
+def manhattan_distance(pos1, pos2):
+    r1, c1 = pos1
+    r2, c2 = pos2
+    return abs(r1 - r2) + abs(c1 - c2)
 
 
 def part1(data: list[str]) -> Any:
     grid = [list(row) for row in data]
     start_pos = find_all_pos(grid, "S")[0]
     end_pos = find_all_pos(grid, "E")[0]
-    initial_cost = find_path(grid, start_pos, end_pos)
-    all_barriers = find_all_pos(grid, "#")
+    initial_cost, path = find_path(grid, start_pos, end_pos)
 
     saved_nseconds = {}
-    for row, col in all_barriers:
-        grid[row][col] = "."
-        cost = find_path(grid, start_pos, end_pos)
-
-        if cost < initial_cost:
-            saved = initial_cost - cost
-            if saved not in saved_nseconds:
-                saved_nseconds[saved] = 0
-            saved_nseconds[saved] += 1
-        grid[row][col] = "#"
+    for i, i_pos in enumerate(path):
+        for j in range(i + 1, len(path)):
+            j_pos = path[j]
+            dist = manhattan_distance(i_pos, j_pos)
+            saved = j - i - dist
+            if 0 < dist <= 2 and saved > 0:
+                if saved not in saved_nseconds:
+                    saved_nseconds[saved] = 0
+                saved_nseconds[saved] += 1
 
     return sum(v for k, v in saved_nseconds.items() if k >= 100)
 
-def iterate_groups(lst, group_sizes):
-    for size in group_sizes:
-        for combination in itertools.combinations(lst, size):
-            yield list(combination)
 
 def part2(data: list[str]) -> Any:
     grid = [list(row) for row in data]
     start_pos = find_all_pos(grid, "S")[0]
     end_pos = find_all_pos(grid, "E")[0]
-    initial_cost = find_path(grid, start_pos, end_pos)
-    all_barriers = find_all_pos(grid, "#")
-
+    initial_cost, path = find_path(grid, start_pos, end_pos)
     saved_nseconds = {}
 
-    for group in iterate_groups(all_barriers, list(range(1, 20))):
-        for row, col in group:
-            grid[row][col] = "."
+    for i, i_pos in enumerate(path):
+        for j in range(i + 1, len(path)):
+            j_pos = path[j]
+            dist = manhattan_distance(i_pos, j_pos)
+            saved = j - i - dist
+            if 0 < dist <= 20 and saved > 0:
+                if saved not in saved_nseconds:
+                    saved_nseconds[saved] = 0
+                saved_nseconds[saved] += 1
 
-        cost = find_path(grid, start_pos, end_pos)
-
-        if cost < initial_cost:
-            saved = initial_cost - cost
-            if saved not in saved_nseconds:
-                saved_nseconds[saved] = 0
-            saved_nseconds[saved] += 1
-
-        for row, col in group:
-            grid[row][col] = "#"
-
-    print(saved_nseconds)
     return sum(v for k, v in saved_nseconds.items() if k >= 100)
 
 
