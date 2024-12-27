@@ -140,35 +140,33 @@ def part2(data: list[str]) -> Any:
     start_dial_init = find_all_pos(KEYPAD_GRID, "A")[0]
     start_dir_init = find_all_pos(DIR_GRID, "A")[0]
 
-    final = 0
+    total_complexity = 0
     for code in data:
         start_dial = start_dial_init
         start_dir = start_dir_init
         dial_paths = [[]]
         for c in code:
             dest = find_all_pos(KEYPAD_GRID, c)[0]
-            many_paths = [
-                p for p in find_path(KEYPAD_GRID, start_dial, dest) if p[0] >= 0
-            ]
-            dial_paths = [e + p + ["A"]
-                          for _, p in many_paths for e in dial_paths]
+            paths = [p for p in find_path(
+                KEYPAD_GRID, start_dial, dest) if p[0] >= 0]
+            dial_paths = [e + p + ["A"] for _, p in paths for e in dial_paths]
             start_dial = dest
 
-        count = sys.maxsize
+        min_seq_len = sys.maxsize
         # there are several presses that takes us there
         # only some takes us to the shortest sequence
         # so just try them all and fetch the smallest
-        for d_p in dial_paths:
-            tmp_count = 0
+        for path in dial_paths:
+            tmp_len = 0
             start_dir = start_dir_init
-            for p in d_p:
-                tmp_count += resolve(p, start_dir, 0, 25)
-                start_dir = find_all_pos(DIR_GRID, p)[0]
-            count = min(count, tmp_count)
+            for step in path:
+                tmp_len += resolve(step, start_dir, 0, 25)
+                start_dir = find_all_pos(DIR_GRID, step)[0]
+            min_seq_len = min(min_seq_len, tmp_len)
 
-        final += int(code[: len(code) - 1]) * count
+        total_complexity += int(code[: len(code) - 1]) * min_seq_len
 
-    return final
+    return total_complexity
 
 
 def main() -> None:
