@@ -64,7 +64,6 @@ fn is_safe(report: List(Int)) -> Bool {
 pub fn remove_at(xs: List(Int), i: Int) -> List(Int) {
   let left = list.take(xs, i)
   let right = list.drop(xs, i + 1)
-  [..left, ..right]
   list.append(left, right)
 }
 
