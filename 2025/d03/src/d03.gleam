@@ -93,8 +93,7 @@ fn find_max_bank_config(bank: List(Int), n: Int) -> List(Int) {
     _ -> {
       // to find the n more significant bank it means n - 1 are reserved for the other digits
       let r_index = { bank |> list.length } - { n - 1 }
-      let n_bank_space = bank |> list.take(r_index)
-      let segment_max_val: #(Int, Int) = calculate_first_max(n_bank_space)
+      let segment_max_val = bank |> list.take(r_index) |> calculate_first_max
 
       [
         segment_max_val.0,
