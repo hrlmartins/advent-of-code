@@ -43,7 +43,7 @@ pub type Pos {
 }
 
 // So... I thought the second problem would be different hence the "empty_spots"
-// But it was not needed. And even the dict could be a set... OH read_all_lines
+// But it was not needed. And even the dict could be a set... OH well... at least I learned how to update records
 // TODO change Grid to be just a SET! :D
 type Grid {
   Grid(grid: dict.Dict(Pos, String), empty_spots: List(Pos))
