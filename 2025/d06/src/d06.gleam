@@ -88,25 +88,6 @@ fn transpose_string(matrix: List(List(String))) -> List(List(String)) {
   }
 }
 
-fn reverse_transpose(matrix: List(List(Int))) -> List(List(Int)) {
-  case matrix {
-    [] -> []
-    [_, ..] -> {
-      let width =
-        matrix
-        |> list.map(fn(l) { l |> list.length })
-        |> list.max(int.compare)
-        |> result.unwrap(-1)
-
-      list.range(width - 1, 0)
-      |> list.map(fn(i) {
-        matrix
-        |> list.map(fn(row) { nth(row, i) })
-      })
-    }
-  }
-}
-
 pub fn parse_columns(lines: List(String)) -> List(Column) {
   let ops_line =
     list.last(lines)
