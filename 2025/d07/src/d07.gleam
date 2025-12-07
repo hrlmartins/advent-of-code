@@ -6,9 +6,7 @@ import gleam/list
 import gleam/pair
 import gleam/regexp
 import gleam/result
-import gleam/set
 import gleam/string
-import gleam/string_tree
 import in
 
 fn read_all_lines_concatenate() -> String {
