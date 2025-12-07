@@ -81,34 +81,41 @@ fn part1(grid: dict.Dict(Pos, SpaceType)) {
   let filter_dict = grid |> dict.filter(fn(pos, val) { val == Start })
   let start_pos =
     filter_dict |> dict.keys |> list.first |> result.unwrap(Pos(-1, -1))
-  visit(grid, start_pos, set.new(), False) |> pair.first
+  visit(grid, start_pos, dict.new(), False) |> pair.first
 }
 
 fn part2(grid: dict.Dict(Pos, SpaceType)) {
   let filter_dict = grid |> dict.filter(fn(pos, val) { val == Start })
   let start_pos =
     filter_dict |> dict.keys |> list.first |> result.unwrap(Pos(-1, -1))
-  visit(grid, start_pos, set.new(), True) |> pair.first
+  visit(grid, start_pos, dict.new(), True) |> pair.first
 }
 
 fn visit(
   grid: dict.Dict(Pos, SpaceType),
   to_visit: Pos,
-  visited: set.Set(Pos),
+  visited: dict.Dict(Pos, Int),
   p2: Bool,
-) -> #(Int, set.Set(Pos)) {
+) -> #(Int, dict.Dict(Pos, Int)) {
   use <- bool.guard(
     when: visited_or_invalid(to_visit, grid, visited),
     return: case p2 {
       True -> {
-        #(1, visited)
+        case visited |> dict.has_key(to_visit) {
+          True -> {
+            let assert Ok(val) = visited |> dict.get(to_visit)
+            #(val, visited)
+          }
+          False -> {
+            #(1, visited)
+          }
+        }
       }
       False -> #(0, visited)
     },
   )
 
   let space = grid |> dict.get(to_visit) |> result.unwrap(Blank)
-  let visited = visited |> set.insert(to_visit)
 
   let #(diff, next) = case space {
     Splitter if !p2 -> #(1, neighbour(to_visit, True))
@@ -120,16 +127,16 @@ fn visit(
   |> list.fold(#(diff, visited), fn(acc, pos) {
     let #(c, v) = acc
     let #(r_count, r_visited) = visit(grid, pos, v, p2)
-    #(c + r_count, r_visited)
+    #(c + r_count, r_visited |> dict.insert(to_visit, c + r_count))
   })
 }
 
 fn visited_or_invalid(
   pos: Pos,
   grid: dict.Dict(Pos, SpaceType),
-  visited: set.Set(Pos),
+  visited: dict.Dict(Pos, Int),
 ) {
-  { visited |> set.contains(pos) } || !dict.has_key(grid, pos)
+  visited |> dict.has_key(pos) || !dict.has_key(grid, pos)
 }
 
 fn neighbour(pos: Pos, is_split: Bool) {
