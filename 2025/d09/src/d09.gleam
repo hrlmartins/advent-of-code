@@ -59,20 +59,27 @@ pub fn main() {
       }
     })
 
-  let comb = combination_list(points)
+  let comb =
+    combination_list(points)
+    |> list.sort(fn(a, b) {
+      let #(_, _, area_a) = a
+      let #(_, _, area_b) = b
+
+      int.compare(area_a, area_b)
+    })
 
   io.println("== Part 1 ==")
   echo part1(comb)
 
   io.println("== Part 2 ==")
   let assert Ok(first) = points |> list.first()
-  echo part2(comb, list.append(points, [first]))
+  echo part2(comb |> list.reverse, list.append(points, [first]))
 }
 
-fn part1(comb: List(#(Point, Point))) {
+fn part1(comb: List(#(Point, Point, Int))) {
   comb
   |> list.fold(-1, fn(acc, p_pair) {
-    let #(f_point, s_point) = p_pair
+    let #(f_point, s_point, _) = p_pair
     let Point(x1, y1) = f_point
     let Point(x2, y2) = s_point
 
@@ -86,53 +93,92 @@ fn part1(comb: List(#(Point, Point))) {
   })
 }
 
-fn part2(comb: List(#(Point, Point)), input: List(Point)) {
-  // build the polygon
+fn part2(comb: List(#(Point, Point, Int)), input: List(Point)) {
   let lines =
     input
     |> list.window_by_2
     |> list.fold([], fn(acc, pair) {
       let #(f_point, s_point) = pair
+      let f_point_n =
+        Point(int.min(f_point.x, s_point.x), int.min(f_point.y, s_point.y))
+      let s_point_n =
+        Point(int.max(f_point.x, s_point.x), int.max(f_point.y, s_point.y))
 
-      [Line(f_point, s_point), ..acc]
+      [Line(f_point_n, s_point_n), ..acc]
     })
-
-  let assert Ok(max_x) =
-    input |> list.map(fn(point) { point.x }) |> list.max(int.compare)
+    |> list.reverse
 
   comb
-  |> list.fold(-1, fn(acc, p_pair) {
-    let #(f_point, s_point) = p_pair
-    let Point(x1, y1) = f_point
-    let Point(x2, y2) = s_point
+  |> list.fold_until(-1, fn(acc, p_pair) {
+    let #(f_point, s_point, area) = p_pair
+    let f_point_n =
+      Point(int.min(f_point.x, s_point.x), int.min(f_point.y, s_point.y))
+    let s_point_n =
+      Point(int.max(f_point.x, s_point.x), int.max(f_point.y, s_point.y))
 
-    let square_points =
-      rectangle_points(f_point, s_point) |> square_border_points
-    let inside =
-      square_points
-      |> list.all(fn(p) {
-        point_on_segment(p, lines) || point_in_polygon(p, lines)
+    let all_square_edges_inside =
+      list.all(rectangle_points(f_point_n, s_point_n), fn(x) {
+        point_on_segment(x, lines) || point_in_polygon(x, lines)
       })
-
-    use <- bool.guard(when: !inside, return: acc)
-
-    let diff_x = int.max(x1, x2) - int.min(x1, x2) + 1
-    let diff_y = int.max(y1, y2) - int.min(y1, y2) + 1
-    let area = diff_x * diff_y
-    case acc < area {
-      True -> area
-      False -> acc
+    case
+      all_square_edges_inside
+      && is_contained(lines, f_point_n.x, f_point_n.y, s_point_n.x, s_point_n.y)
+    {
+      True -> list.Stop(area)
+      False -> list.Continue(acc)
     }
   })
 }
 
-fn combination_list(points: List(Point)) -> List(#(Point, Point)) {
+// this does not work for all examples. I have a few small ones that break the algo in general
+// But seems to work for the input :shrug:. So would no trust this to work for all inputs 
+// unless all inputs share the same properties
+// But basically all it does it test that all polygon edges do not cross the rectangle
+// and so on each each we see if itś horizontal or vertical and check if there is a crossing 
+// And include all polygon edges that are can cross horizonally or vertically (either min or max of the edge is inside the rectangle)
+fn is_contained(
+  edges: List(Line),
+  min_x: Int,
+  min_y: Int,
+  max_x: Int,
+  max_y: Int,
+) {
+  edges
+  |> list.all(fn(edge) {
+    let Line(Point(e_min_x, e_min_y), Point(e_max_x, e_max_y)) = edge
+    case e_min_x == e_max_x {
+      True ->
+        !{
+          min_x < e_min_x
+          && max_x > e_max_x
+          && min_y < e_max_y
+          && max_y > e_min_y
+        }
+      False ->
+        !{
+          min_y < e_min_y
+          && max_y > e_max_y
+          && min_x < e_max_x
+          && max_x > e_min_x
+        }
+    }
+  })
+}
+
+fn combination_list(points: List(Point)) -> List(#(Point, Point, Int)) {
   points
   |> list.index_fold([], fn(acc, point_i, i) {
     points
     |> list.index_fold(acc, fn(acc_x, point_j, j) {
       use <- bool.guard(when: i == j || j < i, return: acc_x)
-      [#(point_i, point_j), ..acc_x]
+
+      let Point(x1, y1) = point_i
+      let Point(x2, y2) = point_j
+
+      let diff_x = int.max(x1, x2) - int.min(x1, x2) + 1
+      let diff_y = int.max(y1, y2) - int.min(y1, y2) + 1
+      let area = diff_x * diff_y
+      [#(point_i, point_j, area), ..acc_x]
     })
   })
 }
@@ -177,75 +223,4 @@ fn point_in_polygon(point: Point, lines: List(Line)) -> Bool {
     })
 
   crossings % 2 == 1
-}
-
-fn points_in_square(square_points: List(Point)) -> List(Point) {
-  let xs = square_points |> list.map(fn(p) { p.x })
-  let ys = square_points |> list.map(fn(p) { p.y })
-
-  let min_x =
-    xs
-    |> list.max(fn(a, b) {
-      case a {
-        _ if a < b -> order.Gt
-        _ if a > b -> order.Lt
-        _ -> order.Eq
-      }
-    })
-    |> result.unwrap(0)
-  let max_x = xs |> list.max(int.compare) |> result.unwrap(0)
-  let min_y =
-    ys
-    |> list.max(fn(a, b) {
-      case a {
-        _ if a < b -> order.Gt
-        _ if a > b -> order.Lt
-        _ -> order.Eq
-      }
-    })
-    |> result.unwrap(0)
-  let max_y = ys |> list.max(int.compare) |> result.unwrap(0)
-
-  list.range(min_y, max_y)
-  |> list.flat_map(fn(y) {
-    list.range(min_x, max_x)
-    |> list.map(fn(x) { Point(x, y) })
-  })
-}
-
-pub fn square_border_points(points: List(Point)) -> List(Point) {
-  case points {
-    [a, b, c, d] -> {
-      let edge1 = points_on_line(a, b)
-      let edge2 = points_on_line(b, c)
-      let edge3 = points_on_line(c, d)
-      let edge4 = points_on_line(d, a)
-
-      edge1
-      |> set.union(edge2)
-      |> set.union(edge3)
-      |> set.union(edge4)
-      |> set.to_list
-    }
-    _ -> []
-  }
-}
-
-fn points_on_line(p1: Point, p2: Point) -> set.Set(Point) {
-  let Point(x1, y1) = p1
-  let Point(x2, y2) = p2
-
-  case x1 == x2 {
-    True -> {
-      list.range(int.min(y1, y2), int.max(y1, y2))
-      |> list.map(fn(y) { Point(x1, y) })
-      |> set.from_list
-    }
-
-    False -> {
-      list.range(int.min(x1, x2), int.max(x1, x2))
-      |> list.map(fn(x) { Point(x, y1) })
-      |> set.from_list
-    }
-  }
 }
